@@ -19,6 +19,8 @@ for KEY in TELEGRAF_CONF; do
 done
 
 if [ $TELEGRAF_CONF ]; then TELEGRAF_CONF=$HOME/$TELEGRAF_CONF; fi
+
+# This syntax is confusing, it basically means: TELEGRAF_CONF ||= "$HOME/telegraf.conf"
 TELEGRAF_CONF=${TELEGRAF_CONF-$HOME/telegraf.conf}
 # TELEGRAF_VERSION=1.9.1
 # TELEGRAF_FILENAME=telegraf-${TELEGRAF_VERSION}_linux_amd64.tar.gz
@@ -65,6 +67,24 @@ cat > $BUILD_DIR/.profile.d/001-heroku-buildpack-telegraf.sh << EOF
 #!/bin/sh
 
 pidfile=/tmp/telegraf.pid
+
+database_url_regex="^postgres://([^:]+):([^@]*)@([^:]+):([^/]+)/(.*)$"
+[[ $DATABASE_URL =~ $database_url_regex ]]
+
+host=${BASH_REMATCH[3]}
+port=${BASH_REMATCH[4]}
+dbname=${BASH_REMATCH[5]}
+user=${BASH_REMATCH[1]}
+password=${BASH_REMATCH[2]}
+
+if [[ "$host" =~ "amazonaws" ]]
+then
+  sslmode=require
+else
+  sslmode=disable
+fi
+
+export TELEGRAF_POSTGRES_CONNECT_STRING="dbname=$dbname host=$host port=$port user=$user password=$password sslmode=$sslmode"
 
 # Start Telegraf from the \$HOME/bin directory with the configuration in /app/telegraf.conf (by default), redirect STDIN to /dev/null (but STDERR should still come through the logs)
 /sbin/start-stop-daemon --start --quiet --pidfile \$pidfile --exec $HOME/bin/telegraf -- -pidfile \$pidfile -config $TELEGRAF_CONF -quiet >/dev/null &
