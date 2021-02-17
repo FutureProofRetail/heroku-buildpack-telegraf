@@ -20,16 +20,21 @@ done
 
 if [ $TELEGRAF_CONF ]; then TELEGRAF_CONF=$HOME/$TELEGRAF_CONF; fi
 TELEGRAF_CONF=${TELEGRAF_CONF-$HOME/telegraf.conf}
-TELEGRAF_VERSION=1.9.1
-TELEGRAF_FILENAME=telegraf-${TELEGRAF_VERSION}_linux_amd64.tar.gz
-TELEGRAF_URL=https://dl.influxdata.com/telegraf/releases/${TELEGRAF_FILENAME}
+# TELEGRAF_VERSION=1.9.1
+# TELEGRAF_FILENAME=telegraf-${TELEGRAF_VERSION}_linux_amd64.tar.gz
+TELEGRAF_FILENAME=telegraf.postgres_feb17.linux.tar.gz
+# TELEGRAF_URL=https://dl.influxdata.com/telegraf/releases/${TELEGRAF_FILENAME}
+TELEGRAF_URL=http://expresscheckout-uploads.s3.amazonaws.com/telegraf/${TELEGRAF_FILENAME}
 
-echo "Installing Telegraf ${TELEGRAF_VERSION}" | arrow
+# echo "Installing Telegraf ${TELEGRAF_VERSION}" | arrow
+echo "Installing custom Telegraf" | arrow
 
+# Heroku will cache anything we put in CACHE_DIR
 if [ ! -d $CACHE_DIR ]; then
     mkdir -p $CACHE_DIR
 fi
 
+# Only download the telegraf tar.cz if we haven't already in the past
 if [ ! -f $CACHE_DIR/$TELEGRAF_FILENAME ]; then
     echo "Downloading telegraf from ${TELEGRAF_URL}" | indent
     curl -sLf -o $CACHE_DIR/$TELEGRAF_FILENAME $TELEGRAF_URL
@@ -40,7 +45,8 @@ tar -C $CACHE_DIR -zxf $CACHE_DIR/$TELEGRAF_FILENAME
 
 # Copy the telegraf binary to the build dir
 mkdir -p $BUILD_DIR/bin
-cp $CACHE_DIR/telegraf/usr/bin/telegraf $BUILD_DIR/bin/telegraf
+# cp $CACHE_DIR/telegraf/usr/bin/telegraf $BUILD_DIR/bin/telegraf
+cp $CACHE_DIR/telegraf $BUILD_DIR/bin/telegraf
 
 influxdb_ssl_ca_cert="INFLUXDB_SSL_CA_CERT"
 if [ -f $ENV_DIR/$influxdb_ssl_ca_cert ]; then
