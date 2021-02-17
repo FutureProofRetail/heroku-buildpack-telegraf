@@ -24,9 +24,9 @@ if [ $TELEGRAF_CONF ]; then TELEGRAF_CONF=$HOME/$TELEGRAF_CONF; fi
 TELEGRAF_CONF=${TELEGRAF_CONF-$HOME/telegraf.conf}
 # TELEGRAF_VERSION=1.9.1
 # TELEGRAF_FILENAME=telegraf-${TELEGRAF_VERSION}_linux_amd64.tar.gz
-TELEGRAF_FILENAME=telegraf.postgres_feb17.linux.tar.gz
+TELEGRAF_FILENAME=telegraf.postgres_feb17.2.linux.tar.gz
 # TELEGRAF_URL=https://dl.influxdata.com/telegraf/releases/${TELEGRAF_FILENAME}
-TELEGRAF_URL=http://expresscheckout-uploads.s3.amazonaws.com/telegraf/${TELEGRAF_FILENAME}
+TELEGRAF_URL=https://expresscheckout-uploads.s3.amazonaws.com/telegraf/${TELEGRAF_FILENAME}
 
 # echo "Installing Telegraf ${TELEGRAF_VERSION}" | arrow
 echo "Installing custom Telegraf" | arrow
@@ -68,23 +68,7 @@ cat > $BUILD_DIR/.profile.d/001-heroku-buildpack-telegraf.sh << EOF
 
 pidfile=/tmp/telegraf.pid
 
-database_url_regex="^postgres://([^:]+):([^@]*)@([^:]+):([^/]+)/(.*)$"
-[[ $DATABASE_URL =~ $database_url_regex ]]
-
-host=${BASH_REMATCH[3]}
-port=${BASH_REMATCH[4]}
-dbname=${BASH_REMATCH[5]}
-user=${BASH_REMATCH[1]}
-password=${BASH_REMATCH[2]}
-
-if [[ "$host" =~ "amazonaws" ]]
-then
-  sslmode=require
-else
-  sslmode=disable
-fi
-
-export TELEGRAF_POSTGRES_CONNECT_STRING="dbname=$dbname host=$host port=$port user=$user password=$password sslmode=$sslmode"
+source $HOME/bin/telegraf_env.sh
 
 # Start Telegraf from the \$HOME/bin directory with the configuration in /app/telegraf.conf (by default), redirect STDIN to /dev/null (but STDERR should still come through the logs)
 /sbin/start-stop-daemon --start --quiet --pidfile \$pidfile --exec $HOME/bin/telegraf -- -pidfile \$pidfile -config $TELEGRAF_CONF -quiet >/dev/null &
